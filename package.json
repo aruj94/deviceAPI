@@ -9,8 +9,7 @@
     "url": "https://github.com/aruj94/teslamegapack.git"
   },
   "scripts": {
-    "start": "nodemon app.js",
-    "test": "mocha tests/*.test.js"
+    "start": "node app.js"
   },
   "author": "Aruj Khandelwal",
   "license": "ISC",
