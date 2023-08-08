@@ -1,4 +1,10 @@
-
+/**
+ * Middleware is desgined to check if the request header has the correct key-value pair
+ * with the right API key. Unauthorized access requests are denied.
+ * @param req client request
+ * @param res respond back to client in case of authentication issues
+ * @param next after authentication move to the next middleware in the route
+ */
 const authentication = async (req, res, next) => {
 
     try {
