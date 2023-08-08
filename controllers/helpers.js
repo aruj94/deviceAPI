@@ -3,7 +3,11 @@ import errorData from "../model/errorData.js";
 
 const stringPattern = /^(\d+):(\d+):'Temperature':(\d+(\.\d+))$/;
 
-// Check if the given JSON request data string pattern is correct or not
+/**
+ * Function checks if the given JSON request data string pattern is correct or not
+ * @param {*} request client request body
+ * @returns boolean
+ */
 async function checkJsonReqFormat(request) {
     // Check if the JSON request has the correct key
     if (!("data" in request)) {
@@ -20,7 +24,11 @@ async function checkJsonReqFormat(request) {
     return pattern
 }
 
-// Check for device over temperature
+/**
+ * Check for device over temperature
+ * @param {*} request client request body
+ * @returns JSON accordingly
+ */
 function checkOvertemperature(request) {
     let matches = request["data"].match(stringPattern);
 
@@ -44,7 +52,10 @@ function checkOvertemperature(request) {
     return {"overtemp": false}
 }
 
-// Save the incorrectly formatted data to database
+/**
+ * Save the incorrectly formatted data to MongoDb database
+ * @param {*} req client request body
+ */
 async function saveErrorData(req) {
 
     const errorDataJson = {data: req["data"]};
@@ -62,7 +73,10 @@ async function saveErrorData(req) {
     }
 }
 
-// Send error data from the database to the client
+/**
+ * Send error data from the database to the client
+ * @param {*} res send back to the client
+ */
 async function getErrorData(res) {
     let error_msg = [];
 
@@ -84,7 +98,10 @@ async function getErrorData(res) {
     }
 }
 
-// Clear error data from the data and respond to the client
+/**
+ * Clear error data from the data and respond to the client
+ * @param {*} res send back to the client
+ */
 async function deleteErrorData(res) {
     try{
         await connectToDatabase();

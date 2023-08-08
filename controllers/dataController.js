@@ -1,9 +1,15 @@
 import { getErrorData, deleteErrorData, checkJsonReqFormat, checkOvertemperature } from "./helpers.js";
 
+/**
+ * An initial welcome message is sent back to the client
+ */
 const initialMessage = (req, res) => {
     res.status(200).send('Welcome to megapack test API');
 }
 
+/**
+ * Error data saved in mongoDb is retreived and is sent back to the user
+ */
 const getData = async (req, res) => {
     try{
         await getErrorData(res);
@@ -12,6 +18,9 @@ const getData = async (req, res) => {
     }
 }
 
+/**
+ * In this functionwe go and delete all the incorrectly formatted error strings saved in mongoDb.
+ */
 const deleteData = async (req, res) => {
     try{
         await deleteErrorData(res);
@@ -20,6 +29,11 @@ const deleteData = async (req, res) => {
     }
 }
 
+/**
+ * In this function we test if the request input data is of the correct format or not.
+ * If data is incorrectly formatted then appropriate responses are sent back to the client.
+ * Incorrectly formatted data strings are further saved into a mongoDb cluster for future usage.
+*/
 const postData = async (req, res) => {
     const contentType = req.get('Content-Type');
     
@@ -30,7 +44,7 @@ const postData = async (req, res) => {
                 return res.status(400).json({ "error": "bad request" })
             }
 
-            const tempJson = checkOvertemperature(req.body, res);
+            const tempJson = checkOvertemperature(req.body);
             res.status(200).json(tempJson);
             
         } catch (error){
