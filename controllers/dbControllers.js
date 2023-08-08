@@ -4,6 +4,9 @@ import mongoose from "mongoose";
 dotenv.config();
 const MONGO_URI = process.env.MONGO_URI;
 
+/**
+ * Function to connect to the MongoDb database
+ */
 async function connectToDatabase() {
     const DB_NAME = process.env.DB_NAME;
 
@@ -20,6 +23,9 @@ async function connectToDatabase() {
     }
   }
 
+/**
+ * Close connection with the database
+ */
 async function closeDbConnection() {
     await mongoose.connection.close();
     console.log("Connection to MongoDB successfully closed.");
