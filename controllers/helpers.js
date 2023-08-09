@@ -1,7 +1,7 @@
 import { connectToDatabase, closeDbConnection } from "./dbControllers.js";
 import errorData from "../model/errorData.js";
 
-const stringPattern = /^(\d+):(\d+):'Temperature':(\d+(\.\d+))$/;
+const stringPattern = /^(\d+):(\d+):'Temperature':(\d+(\.\d+)?)$/;
 
 /**
  * Function checks if the given JSON request data string pattern is correct or not
