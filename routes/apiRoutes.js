@@ -1,11 +1,12 @@
-import { initialMessage, getData, deleteData, postData } from "../controllers/dataController.js";
 import { Router } from "express";
-import authentication from "../middleware/authentication.js";
+import { initialMessage, getData, deleteData, postData } from "../controllers/dataController.js";
+import { authentication } from "../middleware/authentication.js";
+import { checkRateLimit } from "../controllers/redisController.js";
 
 const router = Router();
 
 // Route to get the initial welcome message
-router.get('/', initialMessage)
+router.get('/', checkRateLimit, initialMessage)
 
 // Route to get all the error data saved in mongodb cluster
 router.get('/errors', authentication, getData )
