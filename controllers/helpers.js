@@ -1,5 +1,7 @@
 import { connectToDatabase, closeDbConnection } from "./dbControllers.js";
 import errorData from "../model/errorData.js";
+import { redisClient } from "../app.js";
+import { writeToCache, clearCacheKey, initialCacheSyncWithDb } from "./redisController.js";
 
 const stringPattern = /^(\d+):(\d+):'Temperature':(-?\d+(\.\d+)?)$/;
 
@@ -53,7 +55,7 @@ function checkOvertemperature(request) {
 }
 
 /**
- * Save the incorrectly formatted data to MongoDb database
+ * Save the incorrectly formatted data to MongoDb database and redis cache
  * @param {*} req client request body
  */
 async function saveErrorData(req) {
@@ -64,8 +66,9 @@ async function saveErrorData(req) {
     try {
         await connectToDatabase();
         const savedData = await newdata.save();
-        console.log("bad data saved\n", savedData);
+        console.log("bad data saved to database\n", savedData);
 
+        await writeToCache(errorDataJson);
     } catch(error) {
         console.log(error.message);
     } finally {
@@ -74,32 +77,48 @@ async function saveErrorData(req) {
 }
 
 /**
- * Send error data from the database to the client
+ * Error data is sent to client from the redis cache server or the 
+ * database if the cache server is empty.
  * @param {*} res send back to the client
  */
 async function getErrorData(res) {
+    
     let error_msg = [];
 
     try{
-        await connectToDatabase();
-        const findresult = await errorData.find({}, { _id: 0 });
+        let cachedData = await redisClient.get('errorData');
 
-        for (var i in findresult) {
-            error_msg.push(findresult[i]["data"])
+        if (cachedData) {
+            const findresult = JSON.parse(cachedData);
+            
+            for (var i in findresult) {
+                error_msg.push(findresult[i]["data"])
+            }
+        } else {
+            await connectToDatabase();
+            const findresult = await errorData.find({}, { _id: 0 });
+
+            for (var i in findresult) {
+                error_msg.push(findresult[i]["data"])
+            }
+            await closeDbConnection();
+            
         }
 
         res.status(200).json({"errors": error_msg});
         console.log("sent error data\n", {"errors": error_msg})
 
+        // sync cache with database since cahce is empty
+        await initialCacheSyncWithDb();
+
     } catch(error) {
         console.log(error.message);
-    } finally {
-        await closeDbConnection();
     }
 }
 
 /**
- * Clear error data from the data and respond to the client
+ * Clear error data from the database and redis cahce. 
+ * Respond abck to the client
  * @param {*} res send back to the client
  */
 async function deleteErrorData(res) {
@@ -108,8 +127,9 @@ async function deleteErrorData(res) {
         await errorData.deleteMany({});
 
         res.status(200).json({"message": "Error buffer cleared successfully"});
-        console.log("Error data cleared")
+        console.log("Error data cleared from the database")
 
+        clearCacheKey();
     } catch(error) {
         console.log(error.message);
     } finally {
