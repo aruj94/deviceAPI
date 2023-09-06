@@ -1,6 +1,6 @@
 import { Redis } from "ioredis";
 import { redisClient } from "../app.js";
-import { connectToDatabase, closeDbConnection } from "./dbControllers.js";
+import { connectToDatabase, checkMongoDbConnection } from "./dbControllers.js";
 import errorData from "../model/errorData.js";
 
 /**
@@ -21,6 +21,19 @@ const connectToRedis = async () => {
 }
 
 /**
+ * Check if redis connection works
+ */
+const isRedisConnected = async () => {
+    redisClient.ping().then((result) => {
+        if (result === 'PONG') {
+            return true
+        } else {
+            return false
+        }
+    })
+}
+
+/**
  * Check if an IP violates the rate limit. If so then send an error response.
  * Token bucket algorithm is used for rate limiting.
  * @param {*} req 
@@ -31,6 +44,11 @@ const connectToRedis = async () => {
 const checkRateLimit = async (req, res, next) => {
     const RATE_LIMIT = 100;
     const WINDOW_SECONDS = 60;
+
+    // Check if redis is connected and reconnect if it is not
+    if (!isRedisConnected()) {
+        const redisClient = await connectToRedis();
+    }
 
     try {
         const ipAddress = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
@@ -64,14 +82,22 @@ const checkRateLimit = async (req, res, next) => {
  * Function to read to data from MongoDb collection and sync the redis cache
  */
 const initialCacheSyncWithDb = async () => {
+
+    // Check if redis is connected and reconnect if it is not
+    if (!isRedisConnected()) {
+        const redisClient = await connectToRedis();
+    }
+
     try {
-        await connectToDatabase();
+        // check if mongoDb is connected
+        if (! await checkMongoDbConnection()) {
+            await connectToDatabase();
+        }
+
         const findresult = await errorData.find({}, { _id: 0 });
         await redisClient.set(process.env.CACHE_NAME, JSON.stringify(findresult));
     } catch(error) {
         console.log(error.message);
-    } finally {
-        await closeDbConnection();
     }
 }
 
@@ -81,9 +107,21 @@ const initialCacheSyncWithDb = async () => {
  * @param {*} errorData JSON data with the posted ill-formatted data
  */
 const writeToCache = async (errorData) => {
+
+    // Check if redis is connected and reconnect if it is not
+    if (!isRedisConnected()) {
+        const redisClient = await connectToRedis();
+    }
+    
     try {
         let cachedData = await redisClient.get(process.env.CACHE_NAME);
-        const cachedDataArray = JSON.parse(cachedData);
+
+        if (!cachedData) {
+            await setKeyName();
+            cachedData = await getCacheData();
+        }
+        
+        let cachedDataArray = JSON.parse(cachedData);
 
         // Push the new data into the array
         cachedDataArray.push(errorData);
@@ -99,15 +137,43 @@ const writeToCache = async (errorData) => {
 }
 
 /**
+ * Set a key name in redis. This will be used for storing server cache data
+ */
+const setKeyName = async () => {
+    redisClient.set(process.env.CACHE_NAME, JSON.stringify([]));
+}
+
+/**
+ * 
+ * @returns data from redis for the cache key name
+ */
+const getCacheData = async () => {
+    return redisClient.get(process.env.CACHE_NAME);
+}
+
+/**
+ * Check if a key exists in redis
+ * @returns bool that represents if the given key exists in redis
+ */
+const keyExists = async () => {
+    const cachedData = await getCacheData();
+    if (!cachedData) {
+        return true
+    }
+
+    return false;
+}
+
+/**
  * Delete key from the redis cache
  */
-const clearCacheKey = () => {
+const clearCacheKey = async () => {
     try {
-        redisClient.del(process.env.CACHE_NAME);
+        await redisClient.del(process.env.CACHE_NAME);
         console.log("Error data cleared from the cache");
     } catch(error) {
         console.log(error.message);
     }
 }
 
-export {connectToRedis, checkRateLimit, initialCacheSyncWithDb, writeToCache, clearCacheKey}
+export {connectToRedis, checkRateLimit, initialCacheSyncWithDb, writeToCache, clearCacheKey, keyExists}

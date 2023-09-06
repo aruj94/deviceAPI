@@ -1,7 +1,7 @@
-import { connectToDatabase, closeDbConnection } from "./dbControllers.js";
+import { connectToDatabase, checkMongoDbConnection } from "./dbControllers.js";
 import errorData from "../model/errorData.js";
 import { redisClient } from "../app.js";
-import { writeToCache, clearCacheKey, initialCacheSyncWithDb } from "./redisController.js";
+import { writeToCache, clearCacheKey, initialCacheSyncWithDb, keyExists } from "./redisController.js";
 
 const stringPattern = /^(\d+):(\d+):'Temperature':(-?\d+(\.\d+)?)$/;
 
@@ -64,15 +64,17 @@ async function saveErrorData(req) {
     const newdata = new errorData(errorDataJson);
 
     try {
-        await connectToDatabase();
+        // check if mongoDb is connected
+        if (! await checkMongoDbConnection()) {
+            await connectToDatabase();
+        }
+
         const savedData = await newdata.save();
         console.log("bad data saved to database\n", savedData);
 
         await writeToCache(errorDataJson);
     } catch(error) {
         console.log(error.message);
-    } finally {
-        await closeDbConnection();
     }
 }
 
@@ -86,30 +88,32 @@ async function getErrorData(res) {
     let error_msg = [];
 
     try{
-        let cachedData = await redisClient.get('errorData');
-
-        if (cachedData) {
+        // check if key exists in redis
+        if (keyExists()) {
+            let cachedData = await redisClient.get(process.env.CACHE_NAME);
             const findresult = JSON.parse(cachedData);
             
             for (var i in findresult) {
                 error_msg.push(findresult[i]["data"])
             }
         } else {
-            await connectToDatabase();
+            // check if mongoDb is connected
+            if (! await checkMongoDbConnection()) {
+                await connectToDatabase();
+            }
+
             const findresult = await errorData.find({}, { _id: 0 });
 
             for (var i in findresult) {
                 error_msg.push(findresult[i]["data"])
             }
-            await closeDbConnection();
             
+            // sync cache with database since cahce is empty
+            await initialCacheSyncWithDb();
         }
 
         res.status(200).json({"errors": error_msg});
         console.log("sent error data\n", {"errors": error_msg})
-
-        // sync cache with database since cahce is empty
-        await initialCacheSyncWithDb();
 
     } catch(error) {
         console.log(error.message);
@@ -123,7 +127,11 @@ async function getErrorData(res) {
  */
 async function deleteErrorData(res) {
     try{
-        await connectToDatabase();
+        // check if mongoDb is connected
+        if (! await checkMongoDbConnection()) {
+            await connectToDatabase();
+        }
+
         await errorData.deleteMany({});
 
         res.status(200).json({"message": "Error buffer cleared successfully"});
@@ -132,8 +140,6 @@ async function deleteErrorData(res) {
         clearCacheKey();
     } catch(error) {
         console.log(error.message);
-    } finally {
-        await closeDbConnection();
     }
 }
 
