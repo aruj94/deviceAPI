@@ -6,6 +6,8 @@ Fundamental purpose of this API is to check the post requests for device tempera
 
 Middleware is used in the routes to check for the API_KEY in the request headers foe authentication purposes. Without the API_KEY, middleware authentication will fail.
 
+Redis is used for storing data in cache for faster retrieval. Whne the application starts, redis will sync with current MongoDb data. After the application is up and running, data is synced in redis as well for both POST and DELETE requests.
+
 To send any request to the API you will need to send in the API key in the headers of your request with a {key, value} pair of {authorization, API_KEY}. Otherwise neither of the post, delete or get functions will work. If you dont format the header with the appropriate key, value pair you will recieve a {"error": "Unauthorized: Invalid API key provided"} with 401 status code.
 
 The API has 3 end points which are POST at '/temp', GET at '/errors' and DELETE at '/errors'. Also one GET at '/' which sends a welcome message.
