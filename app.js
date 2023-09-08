@@ -5,6 +5,7 @@ import { connectToRedis } from "./controllers/redisController.js";
 import ApiRouters from "./routes/apiRoutes.js";
 import { initialCacheSyncWithDb } from "./controllers/redisController.js";
 import { connectToDatabase } from "./controllers/dbControllers.js";
+import { errorDataModel, apiKeyDataModel } from "./model/MongoData.js";
 
 const app = Express();
 dotenv.config();
@@ -19,8 +20,9 @@ app.use(cors());
 
 app.use("/api", ApiRouters);
 
-initialCacheSyncWithDb().then(() => {
-    app.listen(PORT)
-});
+await initialCacheSyncWithDb(process.env.ERROR_CACHE_NAME, errorDataModel);
+await initialCacheSyncWithDb(process.env.API_HASH_CACHE_NAME, apiKeyDataModel);
+app.listen(PORT);
+
 
 export {redisClient}

@@ -4,7 +4,7 @@ import ApiRouters from "../routes/apiRoutes.js";
 import authentication from "../middleware/authentication.js";
 import sinon from "sinon";
 import dotenv from 'dotenv'
-import errorData from "../model/errorData.js";
+import errorData from "../model/MongoData.js";
 import { expect } from 'chai'; 
 
 dotenv.config();
