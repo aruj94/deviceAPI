@@ -7,7 +7,7 @@ const MONGO_URI = process.env.MONGO_URI;
 /**
  * Function to connect to the MongoDb database
  */
-async function connectToDatabase() {
+const connectToDatabase = async () => {
     const DB_NAME = process.env.DB_NAME;
 
     try {
@@ -26,9 +26,17 @@ async function connectToDatabase() {
 /**
  * Close connection with the database
  */
-async function closeDbConnection() {
+const closeDbConnection = async () => {
     await mongoose.connection.close();
     console.log("Connection to MongoDB successfully closed.");
 }
+
+const checkMongoDbConnection = async () => {
+  if (mongoose.connection.readyState === 1) {
+    return true
+  }
+
+  return false
+} 
      
-export { connectToDatabase, closeDbConnection };
+export { connectToDatabase, closeDbConnection, checkMongoDbConnection };

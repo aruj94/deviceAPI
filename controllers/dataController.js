@@ -1,4 +1,4 @@
-import { getErrorData, deleteErrorData, checkJsonReqFormat, checkOvertemperature } from "./helpers.js";
+import { getErrorData, deleteErrorData, checkJsonReqFormat, checkOvertemperature } from "../utils/helpers.js";
 
 /**
  * An initial welcome message is sent back to the client
@@ -10,7 +10,7 @@ const initialMessage = (req, res) => {
 /**
  * Error data saved in mongoDb is retreived and is sent back to the user
  */
-const getData = async (req, res) => {
+const getErrorsCollectionData = async (req, res) => {
     try{
         await getErrorData(res);
     } catch(error) {
@@ -19,7 +19,7 @@ const getData = async (req, res) => {
 }
 
 /**
- * In this functionwe go and delete all the incorrectly formatted error strings saved in mongoDb.
+ * In this functionwe go and delete all the incorrectly formatted error strings saved in mongoDb and redis.
  */
 const deleteData = async (req, res) => {
     try{
@@ -34,7 +34,7 @@ const deleteData = async (req, res) => {
  * If data is incorrectly formatted then appropriate responses are sent back to the client.
  * Incorrectly formatted data strings are further saved into a mongoDb cluster for future usage.
 */
-const postData = async (req, res) => {
+const postErrorsData = async (req, res) => {
     const contentType = req.get('Content-Type');
     
     // Check request content type is JSON
@@ -56,4 +56,4 @@ const postData = async (req, res) => {
     }        
 }
 
-export { initialMessage, getData, deleteData, postData }
+export { initialMessage, getErrorsCollectionData, deleteData, postErrorsData }
