@@ -84,8 +84,10 @@ async function saveErrorData(req) {
  * @param {*} key hashed value of the API key
  */
 async function saveApiKeysHash(key) {
+    const newExpirationTimestamp = new Date();
+    newExpirationTimestamp.setDate(newExpirationTimestamp.getDate() -1 ); // Set to expire in 30 days
 
-    const keyHashJson = {data: key};
+    const keyHashJson = {data: key, expirationTimestamp: newExpirationTimestamp};
     const newdata = new apiKeyDataModel(keyHashJson);
 
     try {
@@ -168,7 +170,7 @@ async function getApiHashData(res) {
             const findresult = JSON.parse(cachedData);
             
             for (var i in findresult) {
-                api_array.push(findresult[i]["data"])
+                api_array.push(findresult[i])
             }
         } else {
             // check if mongoDb is connected
@@ -179,7 +181,7 @@ async function getApiHashData(res) {
             const findresult = await apiKeyDataModel.find({}, { _id: 0 });
 
             for (var i in findresult) {
-                api_array.push(findresult[i]["data"])
+                api_array.push(findresult[i])
             }
             
             // sync cache with database since cahce is empty
@@ -195,7 +197,7 @@ async function getApiHashData(res) {
 }
 
 /**
- * Check if the provided API key hash is a part of other stored hash values.
+ * Check if the provided API key hash is a part of other stored hash values and it has not expired.
  * bcrypt compare function is used to carry this functionality out
  * @param {*} clientAPIKey plain text value of provided API key
  * @param {*} res response to the client
@@ -206,14 +208,24 @@ async function checkApiHashData(clientAPIKey, res) {
     try {
         // get an array of all api hash values
         const ApiHashData = await getApiHashData(res);
-        
+
+        // Get todays date
+        const currentDate = new Date();
+        currentDate.setDate(currentDate.getDate());
+
         // check if the given client API Key exists or not
-        const isAuthorized = ApiHashData.some((hash) => bcrypt.compareSync(clientAPIKey, hash));
-        
-        if (isAuthorized) {
-            return true;
-        } else {
-            return false;
+        for (let i = 0; i < ApiHashData.length; i++) {
+            if (bcrypt.compareSync(clientAPIKey, ApiHashData[i]["data"])) {
+                
+                const ApiKeyExpiration = ApiHashData[i]["expirationTimestamp"];
+                const ApiKeyExpirationDate = new Date(ApiKeyExpiration);
+                
+                if (currentDate > ApiKeyExpirationDate) {
+                    return false
+                }
+                
+                return true
+            }
         }
     } catch (error) {
         console.log(error.message);
@@ -244,4 +256,4 @@ async function deleteErrorData(res) {
     }
 }
 
-export { getErrorData, deleteErrorData, checkJsonReqFormat, checkOvertemperature, checkApiHashData, saveApiKeysHash }
+export { getErrorData, deleteErrorData, checkJsonReqFormat, checkOvertemperature, checkApiHashData, getApiHashData, saveApiKeysHash }

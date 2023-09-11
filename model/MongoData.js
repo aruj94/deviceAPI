@@ -18,9 +18,10 @@ const errorDataModel = mongoose.model("Error", errorData, ERRORS_COLLECTION_NAME
  */
 const API_key_data = mongoose.Schema({
     data: { type: String, required: true },
+    expirationTimestamp: { type: Date, required: true },
 }, { versionKey: false });
 
-const apiKeyDataModel = mongoose.model("Api_keys", API_key_data, API_COLLECTION_NAME)
+const apiKeyDataModel = mongoose.model("apikeys", API_key_data, API_COLLECTION_NAME)
 
 
 export {errorDataModel, apiKeyDataModel}

@@ -192,4 +192,27 @@ const clearCacheKey = async (key) => {
     }
 }
 
-export {connectToRedis, checkRateLimit, initialCacheSyncWithDb, writeDataToCache, clearCacheKey, keyExists, isRedisConnected, setKeyName}
+/**
+ * Delete the given value from the redis cache
+ * @param {*} valueToRemove 
+ */
+const deleteSpecificValue = async (valueToRemove) => {
+    try {
+        let cachedData = await redisClient.get(process.env.API_HASH_CACHE_NAME);
+        const currentJsonObj = JSON.parse(cachedData);
+
+        // Filter out the item you want to remove
+        const updatedJsonObj = currentJsonObj.filter(item => item.data !== valueToRemove.data);
+        
+        // Serialize the modified JavaScript object back into a JSON string
+        const updatedJsonValue = JSON.stringify(updatedJsonObj);
+
+        // Update the Redis key with the new JSON string
+        await redisClient.set(process.env.API_HASH_CACHE_NAME, updatedJsonValue);
+        console.log('Removed the API key from Redis.');
+    } catch(error) {
+        console.log(error.message);
+    }
+}
+
+export {connectToRedis, checkRateLimit, initialCacheSyncWithDb, writeDataToCache, clearCacheKey, keyExists, isRedisConnected, setKeyName, getCacheData, deleteSpecificValue}
