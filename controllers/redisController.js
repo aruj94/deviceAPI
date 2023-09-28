@@ -9,14 +9,15 @@ import {errorDataModel, apiKeyDataModel} from "../model/MongoData.js";
  */
 const connectToRedis = async () => {
     const redisClient = new Redis({
-        host: 'localhost',
+        //host: 'localhost',
+        host: process.env.REDIS_HOST,
         port: process.env.REDIS_PORT || 6379,
     });
 
     redisClient.on('error', (error) => {
         console.error('Redis connection error:', error);
     });
-
+    
     return redisClient;
 }
 
