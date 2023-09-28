@@ -9,14 +9,15 @@ import {errorDataModel, apiKeyDataModel} from "../model/MongoData.js";
  */
 const connectToRedis = async () => {
     const redisClient = new Redis({
-        host: 'localhost',
+        //host: 'localhost',
+        host: process.env.REDIS_HOST,
         port: process.env.REDIS_PORT || 6379,
     });
 
     redisClient.on('error', (error) => {
         console.error('Redis connection error:', error);
     });
-
+    
     return redisClient;
 }
 
@@ -192,4 +193,27 @@ const clearCacheKey = async (key) => {
     }
 }
 
-export {connectToRedis, checkRateLimit, initialCacheSyncWithDb, writeDataToCache, clearCacheKey, keyExists, isRedisConnected, setKeyName}
+/**
+ * Delete the given value from the redis cache
+ * @param {*} valueToRemove 
+ */
+const deleteSpecificValue = async (valueToRemove) => {
+    try {
+        let cachedData = await redisClient.get(process.env.API_HASH_CACHE_NAME);
+        const currentJsonObj = JSON.parse(cachedData);
+
+        // Filter out the item you want to remove
+        const updatedJsonObj = currentJsonObj.filter(item => item.data !== valueToRemove.data);
+        
+        // Serialize the modified JavaScript object back into a JSON string
+        const updatedJsonValue = JSON.stringify(updatedJsonObj);
+
+        // Update the Redis key with the new JSON string
+        await redisClient.set(process.env.API_HASH_CACHE_NAME, updatedJsonValue);
+        console.log('Removed the API key from Redis.');
+    } catch(error) {
+        console.log(error.message);
+    }
+}
+
+export {connectToRedis, checkRateLimit, initialCacheSyncWithDb, writeDataToCache, clearCacheKey, keyExists, isRedisConnected, setKeyName, getCacheData, deleteSpecificValue}

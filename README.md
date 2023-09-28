@@ -1,4 +1,4 @@
-# device
+# devicesAPI
 
 This is a dummy API for testing GET, POST and DELETE functionalities. This API uses Node js, Express and MongoDb to carry out its functions.
 
