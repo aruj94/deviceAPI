@@ -9,15 +9,15 @@ import {errorDataModel, apiKeyDataModel} from "../model/MongoData.js";
  */
 const connectToRedis = async () => {
     const redisClient = new Redis({
-        //host: 'localhost',
-        host: process.env.REDIS_HOST,
-        port: process.env.REDIS_PORT || 6379,
+        password: process.env.REDIS_CLOUD_PASSWORD,
+        host: process.env.REDIS_CLOUD_HOSTNAME,
+        port: process.env.REDIS_CLOUD_PORT,
     });
 
     redisClient.on('error', (error) => {
         console.error('Redis connection error:', error);
     });
-    
+
     return redisClient;
 }
 
@@ -127,7 +127,7 @@ const writeDataToCache = async (data, key) => {
 
     // Check if redis is connected and reconnect if it is not
     if (!isRedisConnected()) {
-        const redisClient = await connectToRedis();
+        let redisClient = await connectToRedis();
     }
     
     try {
