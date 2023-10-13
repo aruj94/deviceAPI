@@ -12,7 +12,7 @@ pipeline {
             }
         }
 
-        stage('Build Docker Image') {
+        stage('Building Docker Image') {
             steps {
                 script {
                     def imageName = 'docker-image'
