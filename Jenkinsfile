@@ -21,7 +21,7 @@ pipeline {
                     // Build the Docker image using your Dockerfile.dev
                     sh "docker build -f Dockerfile.dev -t ${imageName}:${tag} ."
 
-                    // Push the image to a Docker registry if needed
+                    // Push the image to Artifact registry if needed
                     // sh "docker push ${imageName}:${tag}"
                 }
             }
