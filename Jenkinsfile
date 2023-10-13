@@ -2,9 +2,13 @@ pipeline {
     agent any
 
     stages {
-        stage('Checkout') {
+
+        stage('Debugging') {
             steps {
-                checkout scm
+                script {
+                    echo "Current directory: ${pwd()}"
+                    sh "ls -l"
+                }
             }
         }
 
