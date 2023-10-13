@@ -7,7 +7,7 @@ pipeline {
             steps {
                 script {
                     echo "Current directory: ${pwd()}"
-                    sh "ls -l"
+                    bat "dir"
                 }
             }
         }
@@ -19,7 +19,7 @@ pipeline {
                     def tag = "localhook"
 
                     // Build the Docker image using your Dockerfile.dev
-                    sh "docker build -f Dockerfile.dev -t ${imageName}:${tag} ."
+                    bat "docker build -f Dockerfile.dev -t ${imageName}:${tag} ."
 
                     // Push the image to Artifact registry if needed
                     // sh "docker push ${imageName}:${tag}"
