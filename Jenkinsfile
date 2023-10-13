@@ -15,7 +15,7 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 script {
-                    def imageName = 'my-docker-image'
+                    def imageName = 'docker-image'
                     def tag = "localhook"
 
                     // Build the Docker image using your Dockerfile.dev
