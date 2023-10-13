@@ -1,9 +1,12 @@
 pipeline {
-    agent {
-		label 'agent1'
-	}
+    agent any
 
     stages {
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
 
         stage('Build Docker Image') {
             steps {
