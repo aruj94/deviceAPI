@@ -3,15 +3,6 @@ pipeline {
 
     stages {
 
-        stage('Debugging') {
-            steps {
-                script {
-                    echo "Current directory: ${pwd()}"
-                    bat "dir"
-                }
-            }
-        }
-
         stage('Building Docker Image') {
             steps {
                 script {
@@ -22,7 +13,7 @@ pipeline {
                     bat "docker build -f Dockerfile.dev -t ${imageName}:${tag} ."
 
                     // Push the image to Artifact registry if needed
-                    // sh "docker push ${imageName}:${tag}"
+                    // bat "docker push ${imageName}:${tag}"
                 }
             }
         }
