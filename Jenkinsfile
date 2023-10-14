@@ -13,7 +13,7 @@ pipeline {
                     bat "docker build -f Dockerfile.dev -t ${imageName}:${tag} ."
 
                     // Push the image to Artifact registry if needed
-                    // bat "docker push ${imageName}:${tag}"
+                    bat "docker push ${imageName}:${tag}"
                 }
             }
         }
