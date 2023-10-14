@@ -12,8 +12,11 @@ pipeline {
                     // Build the Docker image using your Dockerfile.dev
                     bat "docker build -f Dockerfile.dev -t ${imageName}:${tag} ."
 
+                    // Create tag
+                    bat "docker tag ${imageName}:${tag} us-west2-docker.pkg.dev/deviceapi-400721/deviceapi-docker-repo/${imageName}:${tag}"
+
                     // Push the image to Artifact registry if needed
-                    bat "docker push ${imageName}:${tag}"
+                    bat "docker push us-west2-docker.pkg.dev/deviceapi-400721/deviceapi-docker-repo/${imageName}:${tag}"
                 }
             }
         }
