@@ -1,14 +1,15 @@
 pipeline {
     agent any
 
-    stages {
+    environment {
+        imageName = 'deviceapi-image'
+        tag = 'localhook'
+    }
 
+    stages {
         stage('Building Docker Image') {
             steps {
                 script {
-                    def imageName = 'deviceapi-image'
-                    def tag = "localhook"
-
                     withCredentials([string(credentialsId: 'artifact-repo-url', variable: 'registryurl')]) {
 
                         // Build the Docker image using your Dockerfile.dev
@@ -24,9 +25,6 @@ pipeline {
         stage('Push Docker Image to Artifact Registry') {
             steps {
                 script {
-                    def imageName = 'deviceapi-image'
-                    def tag = "localhook"
-
                     withCredentials([string(credentialsId: 'artifact-repo-url', variable: 'registryurl')]) {
                         // Push the image to Artifact registry if needed
                         bat "docker push ${registryurl}/${imageName}:${tag}"
@@ -34,8 +32,6 @@ pipeline {
                 }
             }
         }
-
-        // Add more stages for testing, deploying, etc.
     }
 
     post {
