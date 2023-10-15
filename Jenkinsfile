@@ -10,13 +10,13 @@ pipeline {
                     def imageName = 'deviceapi-image'
                     def tag = "localhook"
 
-                    echo "${registryURL.secretText}"
+                    echo "${registryURL.Secret}"
 
                     // Build the Docker image using your Dockerfile.dev
                     bat "docker build -f Dockerfile.dev -t ${imageName}:${tag} ."
 
                     // Create tag
-                    bat "docker tag ${imageName}:${tag} ${registryURL.secretText}/${imageName}:${tag}"
+                    bat "docker tag ${imageName}:${tag} ${registryURL.Secret}/${imageName}:${tag}"
                 }
             }
         }
@@ -29,7 +29,7 @@ pipeline {
                     def tag = "localhook"
 
                     // Push the image to Artifact registry if needed
-                    bat "docker push ${registryURL.secretText}/${imageName}:${tag}"
+                    bat "docker push ${registryURL.Secret}/${imageName}:${tag}"
                 }
             }
         }
