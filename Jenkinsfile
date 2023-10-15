@@ -23,10 +23,10 @@ pipeline {
                     def tag = "localhook"
 
                     // Create tag
-                    bat "docker tag ${imageName}:${tag} registryCredential/${imageName}:${tag}"
+                    bat "docker tag ${imageName}:${tag} ${registryCredential}/${imageName}:${tag}"
 
                     // Push the image to Artifact registry if needed
-                    bat "docker push registryCredential/${imageName}:${tag}"
+                    bat "docker push ${registryCredential}/${imageName}:${tag}"
                 }
             }
         }
