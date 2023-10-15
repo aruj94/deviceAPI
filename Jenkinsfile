@@ -6,17 +6,17 @@ pipeline {
         stage('Building Docker Image') {
             steps {
                 script {
-                    def registryCredential = credentials('artifact-repo-url')
+                    def registryURL = credentials('artifact-repo-url')
                     def imageName = 'deviceapi-image'
                     def tag = "localhook"
 
-                    echo "${registryCredential}"
+                    echo "${registryURL.secretText}"
 
                     // Build the Docker image using your Dockerfile.dev
                     bat "docker build -f Dockerfile.dev -t ${imageName}:${tag} ."
 
                     // Create tag
-                    bat "docker tag ${imageName}:${tag} ${registryCredential}/${imageName}:${tag}"
+                    bat "docker tag ${imageName}:${tag} ${registryURL.secretText}/${imageName}:${tag}"
                 }
             }
         }
@@ -24,12 +24,12 @@ pipeline {
         stage('Push Docker Image to Artifact Registry') {
             steps {
                 script {
-                    def registryCredential = credentials('artifact-repo-url')
+                    def registryURL = credentials('artifact-repo-url')
                     def imageName = 'deviceapi-image'
                     def tag = "localhook"
 
                     // Push the image to Artifact registry if needed
-                    bat "docker push ${registryCredential}/${imageName}:${tag}"
+                    bat "docker push ${registryURL.secretText}/${imageName}:${tag}"
                 }
             }
         }
