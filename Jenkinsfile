@@ -32,6 +32,18 @@ pipeline {
                 }
             }
         }
+
+        stage('Create a GKE auto-cluster') {
+            steps {
+                script {
+                    withCredentials([string(credentialsId: 'gcp_project_id', variable: 'PROJECT_ID')]) {
+                        // Create a auto-cluster
+                        bat "gcloud container clusters create-auto deviceapi-pipeline-cluster --location=us-west1 --project=${PROJECT_ID}"
+
+                    }
+                }
+            }
+        }
     }
 
     post {
