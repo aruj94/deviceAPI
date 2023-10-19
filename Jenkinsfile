@@ -61,7 +61,7 @@ pipeline {
 
                     withCredentials([file(credentialsId: 'devapi-secrets', variable: 'devapi-secrets')]) {
                         // deploy secrets yaml file to kubernetes cluster
-                        bat "kubectl apply -f deviceapi-secrets"
+                        bat "kubectl apply -f ${deviceapi-secrets}"
                     }
                 }
             }
