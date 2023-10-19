@@ -54,9 +54,9 @@ pipeline {
                         bat "gcloud container clusters get-credentials ${cluster_name} --location=${location} --project=${PROJECT_ID}"
                     }
 
-                    withCredentials([string(credentialsId: 'devapi-secrets', variable: 'SECRET_FILE')]) {
+                    withCredentials([file(credentialsId: 'devapi-secrets', variable: 'devapi-secrets')]) {
                         // deploy secrets yaml file to kubernetes cluster
-                        bat "kubectl apply -f deviceapi-secrets.yaml"
+                        bat "kubectl apply -f deviceapi-secrets"
                     }
                 }
             }
