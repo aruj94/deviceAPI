@@ -3,10 +3,9 @@ pipeline {
 
     environment {
         imageName = 'deviceapi-image'
-        tag = 'localhook'
-        location = 'us-west1'
-        cluster_name = 'deviceapi-pipeline-cluster'
-        workload = 'devapi'
+        tag = 'jenkins'
+        location = 'us-west1-a'
+        cluster_name = 'deviceapi-jenkinspipeline-cluster'
     }
 
     stages {
