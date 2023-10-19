@@ -47,17 +47,20 @@ pipeline {
             }
         }
 
-        stage('connect to cluster and deploy image') {
+        stage ('connect to cluster and deploy kubernetes secrets') {
             steps {
                 script {
                     withCredentials([string(credentialsId: 'gcp_project_id', variable: 'PROJECT_ID')]) {
-                        // Connect to GKE cluster
+                        // Connect to GKE kubernetes cluster
                         bat "gcloud container clusters get-credentials ${cluster_name} --location=${location} --project=${PROJECT_ID}"
+                    }
 
-                        // Deploy docker image from Artifact registry
-                        bat "kubectl run ${workload} --image=${registryurl}/${imageName}:${tag}"
+                    withCredentials([string(credentialsId: 'devapi-secrets', variable: 'SECRET_FILE')]) {
+                        // deploy secrets yaml file to kubernetes cluster
+                        bat "kubectl apply -f ${SECRET_FILE}"
                     }
                 }
+                
             }
         }
     }
