@@ -4,7 +4,7 @@ pipeline {
     environment {
         imageName = 'deviceapi-image'
         tag = 'jenkins'
-        location = 'us-west1-a'
+        location = 'us-west1'
         cluster_name = 'deviceapi-jenkinspipeline-cluster'
     }
 
@@ -59,7 +59,6 @@ pipeline {
                         bat "kubectl apply -f ${SECRET_FILE}"
                     }
                 }
-                
             }
         }
     }
