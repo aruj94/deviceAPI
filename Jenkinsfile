@@ -4,6 +4,9 @@ pipeline {
     environment {
         imageName = 'deviceapi-image'
         tag = 'localhook'
+        location = 'us-west1'
+        cluster_name = 'deviceapi-pipeline-cluster'
+        workload = 'devapi'
     }
 
     stages {
@@ -38,8 +41,21 @@ pipeline {
                 script {
                     withCredentials([string(credentialsId: 'gcp_project_id', variable: 'PROJECT_ID')]) {
                         // Create a auto-cluster
-                        bat "gcloud container clusters create-auto deviceapi-pipeline-cluster --location=us-west1 --project=${PROJECT_ID}"
+                        bat "gcloud container clusters create-auto ${cluster_name} --location=${location} --project=${PROJECT_ID}"
+                    }
+                }
+            }
+        }
 
+        stage('connect to cluster and deploy image') {
+            steps {
+                script {
+                    withCredentials([string(credentialsId: 'gcp_project_id', variable: 'PROJECT_ID')]) {
+                        // Connect to GKE cluster
+                        bat "gcloud container clusters get-credentials ${cluster_name} --location=${location} --project=${PROJECT_ID}"
+
+                        // Deploy docker image from Artifact registry
+                        bat "kubectl run ${workload} --image=${registryurl}/${imageName}:${tag}"
                     }
                 }
             }
