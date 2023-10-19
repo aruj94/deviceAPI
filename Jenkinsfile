@@ -39,10 +39,9 @@ pipeline {
             steps {
                 script {
                     withCredentials([string(credentialsId: 'gcp_project_id', variable: 'PROJECT_ID')]) {
-                        def clusterExists = sh(script: "gcloud container clusters describe ${cluster_name} --location=${location} --project=${PROJECT_ID}", returnStatus: true)
+                        def clusterExists = bat(script: "gcloud container clusters describe ${cluster_name} --location=${location} --project=${PROJECT_ID}", returnStatus: true)
                         if (clusterExists != 0) {
-                            // Cluster does not exist, so create it
-                            // Create a auto-cluster
+                            // Cluster does not exist, so create a auto-cluster
                             bat "gcloud container clusters create-auto ${cluster_name} --location=${location} --project=${PROJECT_ID}"
                         } else {
                             echo "Cluster ${cluster_name} already exists. Skipping cluster creation."
