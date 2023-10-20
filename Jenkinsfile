@@ -61,7 +61,7 @@ pipeline {
 
                     withCredentials([file(credentialsId: 'devapi-secrets', variable: 'secretFile')]) {
                         // Copy the secret file to the workspace
-                        bat "cp ${secretFile} devapi-secrets.yaml"
+                        bat "copy ${secretFile} devapi-secrets.yaml"
 
                         // deploy secrets yaml file to kubernetes cluster
                         bat "kubectl apply -f devapi-secrets.yaml"
