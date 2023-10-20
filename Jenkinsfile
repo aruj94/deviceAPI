@@ -64,7 +64,10 @@ pipeline {
                         bat "copy ${secretFile} devapi-secrets.yaml"
 
                         // deploy secrets yaml file to kubernetes cluster
-                        bat "kubectl apply -f devapi-secrets.yaml"
+                        bat "kubectl create secret generic devapi-secrets --from-file=${secretFile}"
+
+                        // Delete secret file from workspace
+                        bat "delete devapi-secrets.yaml"
                     }
                 }
             }
