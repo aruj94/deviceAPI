@@ -67,7 +67,7 @@ pipeline {
                         bat "kubectl create secret generic devapi-secrets --from-file=${secretFile}"
 
                         // Delete secret file from workspace
-                        bat "delete devapi-secrets.yaml"
+                        bat "del devapi-secrets.yaml"
                     }
                 }
             }
