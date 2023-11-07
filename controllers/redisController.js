@@ -205,7 +205,7 @@ const deleteSpecificValue = async (valueToRemove) => {
         // Filter out the item you want to remove
         const updatedJsonObj = currentJsonObj.filter(item => item.data !== valueToRemove.data);
         
-        // Serialize the modified JavaScript object back into a JSON string
+        // Serialize the modified JavaScript object back into a JSON strin
         const updatedJsonValue = JSON.stringify(updatedJsonObj);
 
         // Update the Redis key with the new JSON string

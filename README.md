@@ -1,12 +1,8 @@
-# devicesAPI
-
-This is a dummy API for testing GET, POST and DELETE functionalities. This API uses Node js, Express and MongoDb to carry out its functions.
+This is a dummy API for testing GET, POST and DELETE functionalities. This API uses Node js, Express, MongoDb cluster and cloud Redis to carry out its functions. It also uses Jenkins to automate docker image creation, pushing image to google cloud artifact registry and creating a GKE auto-cluster using that image. Kubernetes secrets are used to store .env variables. Redis is used for storing data in cache for faster retrieval. Whne the application starts, redis will sync with current MongoDb data. After the application is up and running, data is synced in redis as well for both POST and DELETE requests.
 
 Fundamental purpose of this API is to check the post requests for device temperature data. If the data string is incorrectly formatted, it is stored in a mongodb atlas cluster for future retreival. The GET /errors end point is used to retrieve all the errors saved in the mongodb database and displayed in a specific format to the user - {"errors": {error_string_1, error_string2...}}. The DELETE /errors end point is used to delete all the data stored in the mongodb collection.
 
 Middleware is used in the routes to check for the API_KEY in the request headers foe authentication purposes. Without the API_KEY, middleware authentication will fail.
-
-Redis is used for storing data in cache for faster retrieval. Whne the application starts, redis will sync with current MongoDb data. After the application is up and running, data is synced in redis as well for both POST and DELETE requests.
 
 To send any request to the API you will need to send in the API key in the headers of your request with a {key, value} pair of {authorization, API_KEY}. Otherwise neither of the post, delete or get functions will work. If you dont format the header with the appropriate key, value pair you will recieve a {"error": "Unauthorized: Invalid API key provided"} with 401 status code.
 
@@ -38,7 +34,8 @@ This endpoint will give you a JSON file with the list of all badly formatted __d
 DELETE /errors-
 This endpoint does not require any request bodu but you will need the {authorization, API_KEY} pair in you request headers for successful retrieval.
 This request will delete all the stored error data from mongodb and once completed will send you a success message in JSON format-
-{"message": "Error buffer cleared successfully"} with status code of 200
-
+{"message": "Error buffer cleared successfully"} with status code of 200.
 
 A couple of unit tests have been setup to test routes and middleware operations.
+
+A jenkins pipeline has been created as well which creates a docker image, pushes that image to google cloud artifact registry and then creates a GKE cluster. Kubernestes secrets are used to store .env variables. Jenkins secrets are also used google cloud registry URL, google cloud project Id.
