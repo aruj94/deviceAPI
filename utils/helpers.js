@@ -1,7 +1,7 @@
 import { connectToDatabase, checkMongoDbConnection } from "../controllers/dbControllers.js";
 import {errorDataModel, apiKeyDataModel} from "../model/MongoData.js";
 import { redisClient } from "../app.js";
-import { writeDataToCache, clearCacheKey, initialCacheSyncWithDb, keyExists, isRedisConnected, connectToRedis, setKeyName } from "../controllers/redisController.js";
+import { writeDataToCache, clearCacheKey, cacheSyncWithDb, keyExists, isRedisConnected, connectToRedis, setKeyName, setKeyTTL } from "../controllers/redisController.js";
 import bcrypt from 'bcrypt'; 
 
 const stringPattern = /^(\d+):(\d+):'Temperature':(-?\d+(\.\d+)?)$/;
@@ -80,39 +80,6 @@ async function saveErrorData(req) {
 }
 
 /**
- * Save the hashed API key to both the database and redis cache
- * @param {*} key hashed value of the API key
- */
-async function saveApiKeysHash(key) {
-    const newExpirationTimestamp = new Date();
-    newExpirationTimestamp.setDate(newExpirationTimestamp.getDate() -1 ); // Set to expire in 30 days
-
-    const keyHashJson = {data: key, expirationTimestamp: newExpirationTimestamp};
-    const newdata = new apiKeyDataModel(keyHashJson);
-
-    try {
-        // check if mongoDb is connected
-        if (! await checkMongoDbConnection()) {
-            await connectToDatabase();
-        }
-
-        const savedData = await newdata.save();
-        console.log("api key data saved to database\n", savedData);
-
-        // Check if redis is connected and reconnect if it is not
-        if (!isRedisConnected()) {
-            const redisClient = await connectToRedis();
-        }
-
-        await setKeyName(process.env.API_HASH_CACHE_NAME);
-        await writeDataToCache(keyHashJson, process.env.API_HASH_CACHE_NAME);
-
-    } catch(error) {
-        console.log(error.message);
-    }
-}
-
-/**
  * Error data is sent to client from the redis cache server or the 
  * database if the cache server is empty.
  * @param {*} res send back to the client
@@ -128,7 +95,7 @@ async function getErrorData(res) {
             const findresult = JSON.parse(cachedData);
             
             for (var i in findresult) {
-                error_msg.push(findresult[i]["data"])
+                error_msg.push(findresult[i]["data"]);
             }
         } else {
             // check if mongoDb is connected
@@ -139,11 +106,11 @@ async function getErrorData(res) {
             const findresult = await errorDataModel.find({}, { _id: 0 });
 
             for (var i in findresult) {
-                error_msg.push(findresult[i]["data"])
+                error_msg.push(findresult[i]["data"]);
             }
             
             // sync cache with database since cahce is empty
-            await initialCacheSyncWithDb(process.env.ERROR_CACHE_NAME, errorDataModel);
+            await cacheSyncWithDb(process.env.ERROR_CACHE_NAME, errorDataModel);
         }
 
         res.status(200).json({"errors": error_msg});
@@ -165,7 +132,7 @@ async function getApiHashData(res) {
 
     try{
         // check if key exists in redis
-        if (keyExists(process.env.API_HASH_CACHE_NAME)) {
+        if (await keyExists(process.env.API_HASH_CACHE_NAME)) {
             let cachedData = await redisClient.get(process.env.API_HASH_CACHE_NAME);
             const findresult = JSON.parse(cachedData);
             
@@ -179,13 +146,13 @@ async function getApiHashData(res) {
             }
 
             const findresult = await apiKeyDataModel.find({}, { _id: 0 });
-
+            
             for (var i in findresult) {
                 api_array.push(findresult[i])
             }
             
             // sync cache with database since cahce is empty
-            await initialCacheSyncWithDb(process.env.API_HASH_CACHE_NAME, apiKeyDataModel);
+            await cacheSyncWithDb(process.env.API_HASH_CACHE_NAME, apiKeyDataModel);
         }
 
         return api_array;
@@ -251,9 +218,10 @@ async function deleteErrorData(res) {
         console.log("Error data cleared from the database")
 
         clearCacheKey(process.env.ERROR_CACHE_NAME);
+        clearCacheKey(process.env.API_HASH_CACHE_NAME);
     } catch(error) {
         console.log(error.message);
     }
 }
 
-export { getErrorData, deleteErrorData, checkJsonReqFormat, checkOvertemperature, checkApiHashData, getApiHashData, saveApiKeysHash }
+export { getErrorData, deleteErrorData, checkJsonReqFormat, checkOvertemperature, checkApiHashData, getApiHashData }
