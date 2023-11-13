@@ -83,15 +83,13 @@ const checkRateLimit = async (req, res, next) => {
  * Function to read to data from MongoDb collections and sync the redis cache.
  * Data is read and written in batches so redis can handle data size comfortably.
  */
-const initialCacheSyncWithDb = async (key, dataModel) => {
+const cacheSyncWithDb = async (key, dataModel) => {
     const batchSize = 10; // Number of documents to fetch per batch
 
     // Check if redis is connected and reconnect if it is not
     if (!isRedisConnected()) {
         const redisClient = await connectToRedis();
     }
-
-    await setKeyName(key);
     
     try {
         // check if mongoDb is connected
@@ -135,6 +133,7 @@ const writeDataToCache = async (data, key) => {
 
         if (!cachedData) {
             await setKeyName(key);
+            await setKeyTTL(key);
             cachedData = await getCacheData(key);
         }
         
@@ -161,6 +160,27 @@ const setKeyName = async (key) => {
 }
 
 /**
+ * Set a key time-to-live in redis. The key will expire after the set time.
+ * Redis will remove the key-value pair after the key expiration time elapses.
+ */
+const setKeyTTL = async (key) => {
+    var TTL_SECONDS = 0;
+
+    switch(key) { 
+        case process.env.API_HASH_CACHE_NAME:
+            TTL_SECONDS = 43200;
+            await redisClient.expire(key, TTL_SECONDS);
+            break;
+        case process.env.ERROR_CACHE_NAME:
+            TTL_SECONDS = 86400;
+            await redisClient.expire(key, TTL_SECONDS);
+            break;
+        default:
+          break;
+      }
+}
+
+/**
  * 
  * @returns data from redis for the cache key name
  */
@@ -174,11 +194,12 @@ const getCacheData = async (key) => {
  */
 const keyExists = async (key) => {
     const cachedData = await getCacheData(key);
+    
     if (!cachedData) {
-        return true
+        return false;
     }
 
-    return false;
+    return true;
 }
 
 /**
@@ -216,4 +237,4 @@ const deleteSpecificValue = async (valueToRemove) => {
     }
 }
 
-export {connectToRedis, checkRateLimit, initialCacheSyncWithDb, writeDataToCache, clearCacheKey, keyExists, isRedisConnected, setKeyName, getCacheData, deleteSpecificValue}
+export {connectToRedis, checkRateLimit, cacheSyncWithDb, writeDataToCache, clearCacheKey, keyExists, isRedisConnected, setKeyName, setKeyTTL, getCacheData, deleteSpecificValue}

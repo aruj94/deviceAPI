@@ -11,9 +11,6 @@ const authentication = async (req, res, next) => {
 
     try {
         const apikey = req.headers.authorization;
-
-        /*const hash = await hashKey(apikey);
-        await saveApiKeysHash(hash);*/
         
         // check if provided API key hash exists in cache or database
         const keyAuthenticated = await checkApiHashData(apikey, res);
