@@ -35,51 +35,6 @@ const isRedisConnected = async () => {
 }
 
 /**
- * Check if an IP violates the rate limit. If so then send an error response.
- * Token bucket algorithm is used for rate limiting.
- * @param {*} req 
- * @param {*} res 
- * @param {*} next 
- * @returns 
- */
-const checkRateLimit = async (req, res, next) => {
-    const RATE_LIMIT = 100;
-    const WINDOW_SECONDS = 60;
-
-    // Check if redis is connected and reconnect if it is not
-    if (!isRedisConnected()) {
-        const redisClient = await connectToRedis();
-    }
-
-    try {
-        const ipAddress = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
-        const key = `rate_limit:${ipAddress}`;
-
-        // Check if the bucket exists in Redis, if not, create it
-        const exists = await redisClient.exists(key);
-
-        if (!exists) {
-            await redisClient.hset(key, 'tokens', RATE_LIMIT);
-            await redisClient.expire(key, WINDOW_SECONDS);
-        }
-
-        const tokens = await redisClient.hget(key, 'tokens');
-        if (tokens > 0) {
-            // Decrement the token count and proceed
-            await redisClient.hset(key, 'tokens', tokens - 1);
-            next();
-        } else {
-            // No tokens left, return a rate limit exceeded response
-            res.status(429).json({ error: 'Rate limit exceeded' });
-        }
-    } catch (error) {
-        console.error('Error connecting to Redis:', error);
-        // Handle the Redis connection error and respond to the client
-        return res.status(500).json({ error: 'Internal Server Error' });
-    }
-}
-
-/**
  * Function to read to data from MongoDb collections and sync the redis cache.
  * Data is read and written in batches so redis can handle data size comfortably.
  */
@@ -237,4 +192,4 @@ const deleteSpecificValue = async (valueToRemove) => {
     }
 }
 
-export {connectToRedis, checkRateLimit, cacheSyncWithDb, writeDataToCache, clearCacheKey, keyExists, isRedisConnected, setKeyName, setKeyTTL, getCacheData, deleteSpecificValue}
+export {connectToRedis, cacheSyncWithDb, writeDataToCache, clearCacheKey, keyExists, isRedisConnected, setKeyName, setKeyTTL, getCacheData, deleteSpecificValue}
