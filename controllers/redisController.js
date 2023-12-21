@@ -35,63 +35,16 @@ const isRedisConnected = async () => {
 }
 
 /**
- * Check if an IP violates the rate limit. If so then send an error response.
- * Token bucket algorithm is used for rate limiting.
- * @param {*} req 
- * @param {*} res 
- * @param {*} next 
- * @returns 
- */
-const checkRateLimit = async (req, res, next) => {
-    const RATE_LIMIT = 100;
-    const WINDOW_SECONDS = 60;
-
-    // Check if redis is connected and reconnect if it is not
-    if (!isRedisConnected()) {
-        const redisClient = await connectToRedis();
-    }
-
-    try {
-        const ipAddress = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
-        const key = `rate_limit:${ipAddress}`;
-
-        // Check if the bucket exists in Redis, if not, create it
-        const exists = await redisClient.exists(key);
-
-        if (!exists) {
-            await redisClient.hset(key, 'tokens', RATE_LIMIT);
-            await redisClient.expire(key, WINDOW_SECONDS);
-        }
-
-        const tokens = await redisClient.hget(key, 'tokens');
-        if (tokens > 0) {
-            // Decrement the token count and proceed
-            await redisClient.hset(key, 'tokens', tokens - 1);
-            next();
-        } else {
-            // No tokens left, return a rate limit exceeded response
-            res.status(429).json({ error: 'Rate limit exceeded' });
-        }
-    } catch (error) {
-        console.error('Error connecting to Redis:', error);
-        // Handle the Redis connection error and respond to the client
-        return res.status(500).json({ error: 'Internal Server Error' });
-    }
-}
-
-/**
  * Function to read to data from MongoDb collections and sync the redis cache.
  * Data is read and written in batches so redis can handle data size comfortably.
  */
-const initialCacheSyncWithDb = async (key, dataModel) => {
+const cacheSyncWithDb = async (key, dataModel) => {
     const batchSize = 10; // Number of documents to fetch per batch
 
     // Check if redis is connected and reconnect if it is not
     if (!isRedisConnected()) {
         const redisClient = await connectToRedis();
     }
-
-    await setKeyName(key);
     
     try {
         // check if mongoDb is connected
@@ -135,6 +88,7 @@ const writeDataToCache = async (data, key) => {
 
         if (!cachedData) {
             await setKeyName(key);
+            await setKeyTTL(key);
             cachedData = await getCacheData(key);
         }
         
@@ -161,6 +115,27 @@ const setKeyName = async (key) => {
 }
 
 /**
+ * Set a key time-to-live in redis. The key will expire after the set time.
+ * Redis will remove the key-value pair after the key expiration time elapses.
+ */
+const setKeyTTL = async (key) => {
+    var TTL_SECONDS = 0;
+
+    switch(key) { 
+        case process.env.API_HASH_CACHE_NAME:
+            TTL_SECONDS = 43200;
+            await redisClient.expire(key, TTL_SECONDS);
+            break;
+        case process.env.ERROR_CACHE_NAME:
+            TTL_SECONDS = 86400;
+            await redisClient.expire(key, TTL_SECONDS);
+            break;
+        default:
+          break;
+      }
+}
+
+/**
  * 
  * @returns data from redis for the cache key name
  */
@@ -174,11 +149,12 @@ const getCacheData = async (key) => {
  */
 const keyExists = async (key) => {
     const cachedData = await getCacheData(key);
+    
     if (!cachedData) {
-        return true
+        return false;
     }
 
-    return false;
+    return true;
 }
 
 /**
@@ -216,4 +192,4 @@ const deleteSpecificValue = async (valueToRemove) => {
     }
 }
 
-export {connectToRedis, checkRateLimit, initialCacheSyncWithDb, writeDataToCache, clearCacheKey, keyExists, isRedisConnected, setKeyName, getCacheData, deleteSpecificValue}
+export {connectToRedis, cacheSyncWithDb, writeDataToCache, clearCacheKey, keyExists, isRedisConnected, setKeyName, setKeyTTL, getCacheData, deleteSpecificValue}

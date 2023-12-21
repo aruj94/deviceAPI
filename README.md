@@ -1,4 +1,4 @@
-This is a dummy API for testing GET, POST and DELETE functionalities. This API uses Node js, Express, MongoDb cluster and cloud Redis to carry out its functions. It also uses Jenkins to automate docker image creation, pushing image to google cloud artifact registry and creating a GKE auto-cluster using that image. Kubernetes secrets are used to store .env variables. Redis is used for storing data in cache for faster retrieval. Whne the application starts, redis will sync with current MongoDb data. After the application is up and running, data is synced in redis as well for both POST and DELETE requests.
+This is a dummy API for testing GET, POST and DELETE functionalities. This API uses Node js, Express, MongoDb cluster and cloud Redis to carry out its functions. It also uses Jenkins to automate docker image creation, pushing image to google cloud artifact registry and creating a GKE auto-cluster using that image. Kubernetes secrets are used to store .env variables. Redis is used for storing data in cache for faster retrieval. A time to live policy is implemented for api keys and device data stored in cache. When the user sends a GET request, data is fetched from mongoDb into Redis and sent to the user. Data is also synced in redis POST and DELETE requests.
 
 Fundamental purpose of this API is to check the post requests for device temperature data. If the data string is incorrectly formatted, it is stored in a mongodb atlas cluster for future retreival. The GET /errors end point is used to retrieve all the errors saved in the mongodb database and displayed in a specific format to the user - {"errors": {error_string_1, error_string2...}}. The DELETE /errors end point is used to delete all the data stored in the mongodb collection.
 
@@ -32,7 +32,7 @@ This endpoint will give you a JSON file with the list of all badly formatted __d
 {"errors": ["365951380:1640995229697:'Temperature':45"]} with status code of 200
 
 DELETE /errors-
-This endpoint does not require any request bodu but you will need the {authorization, API_KEY} pair in you request headers for successful retrieval.
+This endpoint does not require any request body but you will need the {authorization, API_KEY} pair in you request headers for successful retrieval.
 This request will delete all the stored error data from mongodb and once completed will send you a success message in JSON format-
 {"message": "Error buffer cleared successfully"} with status code of 200.
 
