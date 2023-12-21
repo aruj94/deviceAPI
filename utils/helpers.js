@@ -104,6 +104,7 @@ async function getErrorData(res) {
             }
 
             const findresult = await errorDataModel.find({}, { _id: 0 });
+            console.log(findresult)
 
             for (var i in findresult) {
                 error_msg.push(findresult[i]["data"]);
@@ -122,12 +123,11 @@ async function getErrorData(res) {
 }
 
 /**
- * API hash data is sent to client from the redis cache server 
- * or the database if the cache server is empty.
+ * Cached API hash data is returned from the redis cache server 
+ * if it is not empty.
  * @param {*} res send back to the client
  */
-async function getApiHashData(res) {
-    
+async function getApiHashDataCache(res) {
     let api_array = [];
 
     try{
@@ -135,28 +135,39 @@ async function getApiHashData(res) {
         if (await keyExists(process.env.API_HASH_CACHE_NAME)) {
             let cachedData = await redisClient.get(process.env.API_HASH_CACHE_NAME);
             const findresult = JSON.parse(cachedData);
-            
-            for (var i in findresult) {
-                api_array.push(findresult[i])
-            }
-        } else {
-            // check if mongoDb is connected
-            if (! await checkMongoDbConnection()) {
-                await connectToDatabase();
-            }
 
-            const findresult = await apiKeyDataModel.find({}, { _id: 0 });
-            
             for (var i in findresult) {
                 api_array.push(findresult[i])
             }
-            
-            // sync cache with database since cahce is empty
-            await cacheSyncWithDb(process.env.API_HASH_CACHE_NAME, apiKeyDataModel);
         }
 
         return api_array;
+    } catch(error) {
+        console.log(error.message);
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+}
 
+/**
+ * API hash data is returned from the MongoDb server 
+ * @param {*} res send back to the client
+ */
+async function getApiHashDataDb(res) {
+    let api_array = [];
+
+    try{
+        // check if mongoDb is connected
+        if (! await checkMongoDbConnection()) {
+            await connectToDatabase();
+        }
+
+        const findresult = await apiKeyDataModel.find({}, { _id: 0 });
+        
+        for (var i in findresult) {
+            api_array.push(findresult[i])
+        }
+
+        return api_array;
     } catch(error) {
         console.log(error.message);
         res.status(500).json({ error: 'Internal Server Error' });
@@ -173,24 +184,42 @@ async function getApiHashData(res) {
 async function checkApiHashData(clientAPIKey, res) {
     
     try {
-        // get an array of all api hash values
-        const ApiHashData = await getApiHashData(res);
-
         // Get todays date
         const currentDate = new Date();
         currentDate.setDate(currentDate.getDate());
 
+        // check API key in cache
+        const ApiHashDataCache = await getApiHashDataCache(res);
+
         // check if the given client API Key exists or not
-        for (let i = 0; i < ApiHashData.length; i++) {
-            if (bcrypt.compareSync(clientAPIKey, ApiHashData[i]["data"])) {
+        for (let i = 0; i < ApiHashDataCache.length; i++) {
+            if (bcrypt.compareSync(clientAPIKey, ApiHashDataCache[i]["data"])) {
+                const ApiKeyExpiration = ApiHashDataCache[i]["expirationTimestamp"];
+                const ApiKeyExpirationDate = new Date(ApiKeyExpiration);
                 
-                const ApiKeyExpiration = ApiHashData[i]["expirationTimestamp"];
+                if (currentDate > ApiKeyExpirationDate) {
+                    return false
+                }
+
+                return true
+            }
+        }
+
+        // check API key in cache
+        const ApiHashDataDb = await getApiHashDataDb(res);
+
+        // check if the given client API Key exists or not
+        for (let i = 0; i < ApiHashDataDb.length; i++) {
+            if (bcrypt.compareSync(clientAPIKey, ApiHashDataDb[i]["data"])) {
+                
+                const ApiKeyExpiration = ApiHashDataDb[i]["expirationTimestamp"];
                 const ApiKeyExpirationDate = new Date(ApiKeyExpiration);
                 
                 if (currentDate > ApiKeyExpirationDate) {
                     return false
                 }
                 
+                await writeDataToCache(ApiHashDataDb[i], process.env.API_HASH_CACHE_NAME);
                 return true
             }
         }
@@ -218,10 +247,9 @@ async function deleteErrorData(res) {
         console.log("Error data cleared from the database")
 
         clearCacheKey(process.env.ERROR_CACHE_NAME);
-        clearCacheKey(process.env.API_HASH_CACHE_NAME);
     } catch(error) {
         console.log(error.message);
     }
 }
 
-export { getErrorData, deleteErrorData, checkJsonReqFormat, checkOvertemperature, checkApiHashData, getApiHashData }
+export { getErrorData, deleteErrorData, checkJsonReqFormat, checkOvertemperature, checkApiHashData, getApiHashDataCache, getApiHashDataDb }
