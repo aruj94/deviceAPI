@@ -252,4 +252,4 @@ async function deleteErrorData(res) {
     }
 }
 
-export { getErrorData, deleteErrorData, checkJsonReqFormat, checkOvertemperature, checkApiHashData, getApiHashDataCache, getApiHashDataDb }
+export { getErrorData, deleteErrorData, checkJsonReqFormat, checkOvertemperature, checkApiHashData }
