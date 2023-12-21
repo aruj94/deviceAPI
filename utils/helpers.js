@@ -256,4 +256,4 @@ async function deleteErrorData(res) {
     }
 }
 
-export { getErrorData, deleteErrorData, checkJsonReqFormat, checkOvertemperature, checkApiHashData, getApiHashData, saveApiKeysHash }
+export { getErrorData, deleteErrorData, checkJsonReqFormat, checkOvertemperature, checkApiHashData }
