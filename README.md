@@ -1,8 +1,10 @@
 This is a dummy API for testing GET, POST and DELETE functionalities. This API uses Node js, Express, MongoDb cluster and cloud Redis to carry out its functions. It also uses Jenkins to automate docker image creation, pushing image to google cloud artifact registry and creating a GKE auto-cluster using that image. Kubernetes secrets are used to store .env variables. Redis is used for storing data in cache for faster retrieval. A time to live policy is implemented for api keys and device data stored in cache. When the user sends a GET request, data is fetched from mongoDb into Redis and sent to the user. Data is also synced in redis POST and DELETE requests.
 
+A reverse proxy openresty nginx server conf file and traffic limiting lua files are also included although they require further configuration to run on kubernetes cluster. Jenkins and docker file also require changes so that nginx is setup properly in kubernetes.
+
 Fundamental purpose of this API is to check the post requests for device temperature data. If the data string is incorrectly formatted, it is stored in a mongodb atlas cluster for future retreival. The GET /errors end point is used to retrieve all the errors saved in the mongodb database and displayed in a specific format to the user - {"errors": {error_string_1, error_string2...}}. The DELETE /errors end point is used to delete all the data stored in the mongodb collection.
 
-Middleware is used in the routes to check for the API_KEY in the request headers foe authentication purposes. Without the API_KEY, middleware authentication will fail.
+Middleware is used in the routes to check for the API_KEY in the request headers for authentication purposes. Without the API_KEY, middleware authentication will fail.
 
 To send any request to the API you will need to send in the API key in the headers of your request with a {key, value} pair of {authorization, API_KEY}. Otherwise neither of the post, delete or get functions will work. If you dont format the header with the appropriate key, value pair you will recieve a {"error": "Unauthorized: Invalid API key provided"} with 401 status code.
 
